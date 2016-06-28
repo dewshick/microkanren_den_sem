@@ -1,0 +1,49 @@
+\documentclass[11pt]{article}
+\usepackage{amstex}
+\usepackage{stmaryrd}
+
+\begin{document}
+\begin{center}
+\textbf {Approach 1:}
+\end{center}
+% TODO: find macro to run \textrm{\textbf {}}
+\newcommand{\keyword}[1]{\textrm{\textbf{#1}}}
+\newcommand{\semantics}[1]{\llbracket#1\rrbracket}
+Domains:
+$$ t \in Term $$
+$$ x \in Var $$
+$$ n \in RelName $$
+$$ Rel = Var \hookrightarrow Const $$
+$$ f \in Rel $$
+$$ u \subset Rel $$
+$$ Binding = Var \times Rel $$
+$$ vu \in Binding $$
+$$ RelEnv = RelName \hookrightarrow Binding $$
+$$ a \in RelEnv $$
+Auxillary functions:
+$$ f_\bot(v) = \bot $$
+$$ u_\bot = \{f_\bot\} $$
+$$ a_\bot(n) = \emptyset $$
+$$ subst(t,f) = t[x_i \leftarrow f(x_i)] $$
+$$ ext(u,x) = \{ f' \mid (f'(x) \neq \bot) \wedge (\exists f \in u \ldotp \forall v \neq x \ldotp f'(v) = f(v)) \} $$
+$$ relate((x,u), y) = \{ f' \mid (\forall z \neq x \ldotp f'(z) = \bot) \wedge (\exists f \in u \ldotp f'(y) = f(x)) \} $$
+$$ lookup(a,n) = a(n) $$
+$$ extend(a,n,vu) = a' \colon (\forall n' \neq n \ldotp a'(n') = a(n')) \wedge (a'(n) = vu) $$
+$$ fixpoint(n, x, e) = \bigsqcup_{n \in \omega} fixed^n(a_\bot) $$
+$$ \textrm{where } f(u, a) = \semantics{e}(u, a) $$
+$$ \textrm{ and } fixed(a) = extend(a, n, (x, f(ext(u_\bot, x),a))) $$
+\newpage
+Semantics:
+$$ \semantics{t_1 \equiv t_2}(u, a) = \{ f \in u  \mid subst(t_1, f) = subst(t_2, f) \} $$
+$$ \semantics{e_1 \vee e_2} (u, a) = e_1(u, a) \cup e_2(u, a) $$
+$$ \semantics{e_1 \wedge e_2}(u, a) = e_1(u, a) \cap e_2(u, a) $$
+$$ \semantics{\keyword{fresh}(x,e)}(u, a) = \semantics{e}(ext(u,x), a) $$
+$$ \semantics{\keyword{call}(n,x)}(u, a) = relate(lookup(a,n), x) $$
+$$ \semantics{\keyword{letrec} (n, x) \keyword{be} (e_1) \keyword{in} (e_2)} (u, a) = \semantics{e_2}(u, extend(a, n, fixpoint(n, x, e_1))) $$
+$$ \semantics{\keyword{relation} (e)} = \semantics{e}(u_\bot, a_\bot) $$
+
+\begin{center}
+% \textbf {Approach 2:}
+
+\end{center}
+\end{document}
