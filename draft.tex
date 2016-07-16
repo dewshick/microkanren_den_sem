@@ -1,5 +1,5 @@
 \documentclass[11pt]{article}
-\usepackage{amstex}
+\usepackage{amsmath}
 \usepackage{stmaryrd}
 
 \begin{document}
@@ -15,31 +15,59 @@ $$ x \in Var $$
 $$ n \in RelName $$
 $$ Rel = Var \hookrightarrow Const $$
 $$ f \in Rel $$
-$$ u \subset Rel $$
+$$ u \subset Rel (u \in 2^{Rel}) $$
 $$ Binding = Var \times Rel $$
 $$ vu \in Binding $$
 $$ RelEnv = RelName \hookrightarrow Binding $$
 $$ a \in RelEnv $$
-Auxillary functions:
-$$ f_\bot(v) = \bot $$
-$$ u_\bot = \{f_\bot\} $$
-$$ a_\bot(n) = \emptyset $$
+$$ RelExpr \in 2^{Rel} \rightarrow RelEnv \rightarrow 2^{Rel} $$
+
+\newpage
+Simple auxillary functions:
+$$ f_\bot(v) \in Rel = \bot $$
+
+$$ u_\bot \in 2^{Rel} = \{f_\bot\} $$
+
+$$ a_\bot \in RelEnv $$
+$$ a_\bot(n) = \bot $$
+
+$$\frac{t \in Term, f \in Rel}{ subst(t,f) \in Term } $$
 $$ subst(t,f) = t[x_i \leftarrow f(x_i)] $$
+
+$$ \frac{ u \in 2^{Rel} , x \in Var}{ ext(u,x) \in 2^{Rel} } $$
 $$ ext(u,x) = \{ f' \mid (f'(x) \neq \bot) \wedge (\exists f \in u \ldotp \forall v \neq x \ldotp f'(v) = f(v)) \} $$
-$$ relate((x,u), y) = \{ f' \mid (\forall z \neq x \ldotp f'(z) = \bot) \wedge (\exists f \in u \ldotp f'(y) = f(x)) \} $$
+
+$$ \frac{ x,x' \in Var, u \in 2^{Rel} }{relate((x,u), x') \in 2^{Rel} } $$
+$$ relate((x,u), x') = \{ f' \mid (\forall x'' \neq x \ldotp f'(x'') = \bot) \wedge (\exists f \in u \ldotp f'(x') = f(x)) \} $$
+
+$$ \frac{ a \in RelEnv, n \in RelName }{ lookup(a,n) \in Binding } $$
 $$ lookup(a,n) = a(n) $$
+
+$$ \frac{ a \in RelEnv, n \in RelName, vu \in Binding }{ extend(a,n,vu) \in RelEnv } $$
 $$ extend(a,n,vu) = a' \colon (\forall n' \neq n \ldotp a'(n') = a(n')) \wedge (a'(n) = vu) $$
-$$ fixpoint(n, x, e) = \bigsqcup_{n \in \omega} fixed^n(a_\bot) $$
-$$ \textrm{where } f(u, a) = \semantics{e}(u, a) $$
-$$ \textrm{ and } fixed(a) = extend(a, n, (x, f(ext(u_\bot, x),a))) $$
+\newpage
+Recursion and fixed point construction
+$$ \frac{\semantics{e} \in RelExpr, n \in RelName, x \in Var, a \in RelEnv }
+{fixed(a) \in RelEnv, fixpoint(n,x,e) \in RelEnv } $$
+$$ fixpoint(n, x, e) = \bigsqcup_{m \in \omega} fixed^m(a_\bot) $$
+$$ \textrm{ where } fixed(a) = extend(a, n, (x, \semantics{e}(ext(u_\bot, x),a))) $$
 \newpage
 Semantics:
+
+$$ \frac{t_1 \in Term , t_2 \in Term}{\semantics{t_1 \equiv t_2} \in RelExpr} $$
 $$ \semantics{t_1 \equiv t_2}(u, a) = \{ f \in u  \mid subst(t_1, f) = subst(t_2, f) \} $$
+
+$$ \frac{\semantics{e_1} \in RelExpr,  \semantics{e_2} \in RelExpr}{\semantics{e_1 \vee e_2} \in RelExpr, \semantics{e_1 \wedge e_2} \in RelExpr}$$
 $$ \semantics{e_1 \vee e_2} (u, a) = e_1(u, a) \cup e_2(u, a) $$
 $$ \semantics{e_1 \wedge e_2}(u, a) = e_1(u, a) \cap e_2(u, a) $$
+
+$$ \frac{\semantics{e} \in RelExpr, x \in Var}{\semantics{\keyword{fresh}(x,e)} \in RelExpr}$$
 $$ \semantics{\keyword{fresh}(x,e)}(u, a) = \semantics{e}(ext(u,x), a) $$
-$$ \semantics{\keyword{call}(n,x)}(u, a) = relate(lookup(a,n), x) $$
+
+$$ \frac{ n \in RelName , x \in Var,\semantics{e_1} \in RelExpr, \semantics{e_2} \in RelExpr}{ \semantics{\keyword{letrec} (n, x) \keyword{be} (e_1) \keyword{in} (e_2)} \in RelExpr } $$
 $$ \semantics{\keyword{letrec} (n, x) \keyword{be} (e_1) \keyword{in} (e_2)} (u, a) = \semantics{e_2}(u, extend(a, n, fixpoint(n, x, e_1))) $$
+
+$$ \frac{ \semantics{e} \in RelExpr }{ \semantics{\keyword{relation} (e)} \in 2^{Rel} } $$
 $$ \semantics{\keyword{relation} (e)} = \semantics{e}(u_\bot, a_\bot) $$
 
 \begin{center}
