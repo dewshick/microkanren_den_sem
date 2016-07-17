@@ -64,6 +64,9 @@ $$ \semantics{e_1 \wedge e_2}(u, a) = e_1(u, a) \cap e_2(u, a) $$
 $$ \frac{\semantics{e} \in RelExpr, x \in Var}{\semantics{\keyword{fresh}(x,e)} \in RelExpr}$$
 $$ \semantics{\keyword{fresh}(x,e)}(u, a) = \semantics{e}(ext(u,x), a) $$
 
+$$ \frac{ n \in RelName, x \in Var }{ \semantics{\keyword{call}(n,x)} \in RelExpr } $$
+$$ \semantics{\keyword{call}(n,x)}(u, a) = relate(lookup(a,n), x) $$
+
 $$ \frac{ n \in RelName , x \in Var,\semantics{e_1} \in RelExpr, \semantics{e_2} \in RelExpr}{ \semantics{\keyword{letrec} (n, x) \keyword{be} (e_1) \keyword{in} (e_2)} \in RelExpr } $$
 $$ \semantics{\keyword{letrec} (n, x) \keyword{be} (e_1) \keyword{in} (e_2)} (u, a) = \semantics{e_2}(u, extend(a, n, fixpoint(n, x, e_1))) $$
 
