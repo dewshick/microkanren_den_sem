@@ -1,80 +1,103 @@
-\documentclass[11pt]{article}
+\documentclass[fleqn]{article}
 \usepackage{amsmath}
+\usepackage{amssymb}
 \usepackage{stmaryrd}
 
 \begin{document}
-\begin{center}
-\textbf {Approach 1:}
-\end{center}
-% TODO: find macro to run \textrm{\textbf {}}
 \newcommand{\keyword}[1]{\textrm{\textbf{#1}}}
 \newcommand{\semantics}[1]{\llbracket#1\rrbracket}
-Domains:
-$$ t \in Term $$
-$$ x \in Var $$
-$$ n \in RelName $$
-$$ Rel = Var \hookrightarrow Const $$
-$$ f \in Rel $$
-$$ u \subset Rel (u \in 2^{Rel}) $$
-$$ Binding = Var \times Rel $$
-$$ vu \in Binding $$
-$$ RelEnv = RelName \hookrightarrow Binding $$
-$$ a \in RelEnv $$
-$$ RelExpr \in 2^{Rel} \rightarrow RelEnv \rightarrow 2^{Rel} $$
+\section{Domains}
+\subsection{Internal domains}
+\[\mathbb{X} = \{x,...\} \textrm{ - a countable set of semantic variables }\]
+\[ X \subset \mathbb{X} \textrm{ - a set of semantic variables in use }\]
+\[ A = \{a^k, ...\} \textrm{ - a finite set of atoms/constructors}; k \geq 0 \textrm{ stands for arity }\]
+\[ T = x \mid a^k(t_1...t_k), t_i \in T \textrm{ - terms over X and A}\]
+\[ \mathcal{D} = a^k(d_1,..d_k), d_i \in \mathcal{D} \textrm{ - ground terms(values).}\]
+\subsection{Syntax-related domains}
+\[ \mathcal{D}^X = X \rightarrow \mathcal{D} \textrm{ - a set of all total functions from } X \textrm{ to } \mathcal{D}.\]
+\[r \in \mathcal{D}^X\]
+\[ \mathbf{X} = \{ \mathbf{x}, ... \}\textrm{ - set of syntactic variables }\]
+\[ \Gamma \in \mathbf{X} \rightarrow X \textrm{ - environment }\]
+
+Environment is a mapping from syntactic to semantic variables. It is used to separate syntax and semantics to avoid shadowing-related issues.
+
+\subsection{Expression domains}
+
+\[ \semantics{e}(\Gamma, X) \subset \mathcal{D}^X \textrm{ - expression semantics }\]
+
+Expressions' codomain is unary relation on total function from semantic variables to ground terms. Note that \(X\) in argument and in codomain is the same \(X\), so we can safely reason about extensional equivalence of expressions, given well-defined input(casually, well-defined input is when variables are always introduced correctly).
+% Well-definedness is 
+\subsection{Goal domains}
+
+\[ \semantics{g} \subset \mathcal{D}^\mathbb{X} \textrm{ - top-level goal semantics} \]
+
+Goal represents query in minikanren. We define this query as expression over finite set of variables. The result of goal evaluation is unary relation on total functions from the set of goal variables to the set of ground terms.
+
+% Each function represents a substitution for goal variables, so the formula, corresponding to the goal expression will be truthy. We expect our set of solutions to be correct and complete, but this is to be proved later.
+\newpage
+
+\section{Semantics}
+\subsection{Expressions}
+\subsubsection{Fresh variable introduction}
+\[ \semantics{\keyword{fresh}(\mathbf{x}, e)}(\Gamma, X) = \{ f|_X \mid f \in \semantics{e}(\Gamma,\mathbf{x} \rightarrow x; X \cup \{x\}), x \notin X \}\]
+
+There's certain non-determinism introduced via adding unknown \(x\) to set of semantic variables in use, but for us it's uniqueness property \(x \notin X\) will be enough.
+
+We evaluate fresh, introducing new semantic variable for correspodning syntactic variable, then we compute inner expression in extended environment and after that we shrink semantic domain of resulting functions to \(X\). With this approach, we can guarantee for top-level expression, that only free variables will be included in answer, also we guarantee the equality of domains for semantics of subexpressions, nested at the same level, say for \(\semantics{e_1 \wedge e_2}\). 
+
+Also with this property we can safely reason about (extensional) equivalence of expressions, since each expression will evaluate to 
+\subsubsection{Equivalence}
+\[\semantics{t_1 \equiv t_2}(\Gamma, X) = \{ f \mid subst(f, \Gamma, t_1) = subst(f, \Gamma, t_2) \}\]
+\[subst(f, \Gamma, d) = d\]
+\[subst(f, \Gamma, \mathbf{x}) = f(\Gamma(\mathbf{x}))\]
+\[subst(f, \Gamma, t_1) = t_1[\mathbf{x_i} \leftarrow f(\Gamma(\mathbf{x_i}))]\]
+Commentary: I decided to use auxillary function for substitution instead of enumeration of all the cases, since it will be easier to describe all the cases of unification this way. Substitution just replaces all the occurences of syntactic variables in term, according to \(f\) and \(\Gamma\).
+
+\subsubsection{ Conjunction/disjunction }
+\[\semantics{e_1 \wedge e_2}(\Gamma, X) = \semantics{e_1}(\Gamma, X) \cap \semantics{e_2}(\Gamma, X)\]
+\[\semantics{e_1 \vee e_2}(\Gamma, X) = \semantics{e_1}(\Gamma, X) \cup \semantics{e_2}(\Gamma, X)\]
+
+We can safely use \(\cap\) and \(\cup\) since \(\semantics{e}(\Gamma,X) \in \mathcal{D}^X\) according to (1.3).
 
 \newpage
-Simple auxillary functions:
-$$ f_\bot(v) \in Rel = \bot $$
 
-$$ u_\bot \in 2^{Rel} = \{f_\bot\} $$
+\subsection{Goals}
+\[ \semantics{\keyword{goal}(x_1,x_2,..x_n)(e)} = \semantics{e}(\Gamma, X) \circ \Gamma \]
+\[X=\{x_1,...x_n\}\]
+\[\Gamma \in \mathcal{D}^X, \Gamma = \{\mathbf{x}_i \rightarrow x_i\}_{i=1}^n\]
+\[\forall i \neq j, x_i \neq x_j \]
 
-$$ a_\bot \in RelEnv $$
-$$ a_\bot(n) = \bot $$
-
-$$\frac{t \in Term, f \in Rel}{ subst(t,f) \in Term } $$
-$$ subst(t,f) = t[x_i \leftarrow f(x_i)] $$
-
-$$ \frac{ u \in 2^{Rel} , x \in Var}{ ext(u,x) \in 2^{Rel} } $$
-$$ ext(u,x) = \{ f' \mid (f'(x) \neq \bot) \wedge (\exists f \in u \ldotp \forall v \neq x \ldotp f'(v) = f(v)) \} $$
-
-$$ \frac{ x,x' \in Var, u \in 2^{Rel} }{relate((x,u), x') \in 2^{Rel} } $$
-$$ relate((x,u), x') = \{ f' \mid (\forall x'' \neq x \ldotp f'(x'') = \bot) \wedge (\exists f \in u \ldotp f'(x') = f(x)) \} $$
-
-$$ \frac{ a \in RelEnv, n \in RelName }{ lookup(a,n) \in Binding } $$
-$$ lookup(a,n) = a(n) $$
-
-$$ \frac{ a \in RelEnv, n \in RelName, vu \in Binding }{ extend(a,n,vu) \in RelEnv } $$
-$$ extend(a,n,vu) = a' \colon (\forall n' \neq n \ldotp a'(n') = a(n')) \wedge (a'(n) = vu) $$
+We do not define precisely, which \(x_i\) will correspond to certain \(\mathbf{x}_i\), the only purpose of \(x_i\) is to identify uniqueness of semantic variables and avoid shadowing-related issues via separation of syntactic and semantic variables, as it was mentioned.
 \newpage
-Recursion and fixed point construction
-$$ \frac{\semantics{e} \in RelExpr, n \in RelName, x \in Var, a \in RelEnv }
-{fixed(a) \in RelEnv, fixpoint(n,x,e) \in RelEnv } $$
-$$ fixpoint(n, x, e) = \bigsqcup_{m \in \omega} fixed^m(a_\bot) $$
-$$ \textrm{ where } fixed(a) = extend(a, n, (x, \semantics{e}(ext(u_\bot, x),a))) $$
-\newpage
-Semantics:
+\section{Reasoning about semantic properties.}
+\subsection{Semantic equivalence}
+\[\semantics{e_1} \equiv \semantics{e_2} \iff \forall \Gamma \colon \forall X \colon \semantics{e_1}(\Gamma, X) = \semantics{e_2}(\Gamma, X)\]
 
-$$ \frac{t_1 \in Term , t_2 \in Term}{\semantics{t_1 \equiv t_2} \in RelExpr} $$
-$$ \semantics{t_1 \equiv t_2}(u, a) = \{ f \in u  \mid subst(t_1, f) = subst(t_2, f) \} $$
+Further, by equivalence of expressions, we will assume extensional equivalence of expressions, that is equivalence of expressions' semantics for all possible inputs.
 
-$$ \frac{\semantics{e_1} \in RelExpr,  \semantics{e_2} \in RelExpr}{\semantics{e_1 \vee e_2} \in RelExpr, \semantics{e_1 \wedge e_2} \in RelExpr}$$
-$$ \semantics{e_1 \vee e_2} (u, a) = e_1(u, a) \cup e_2(u, a) $$
-$$ \semantics{e_1 \wedge e_2}(u, a) = e_1(u, a) \cap e_2(u, a) $$
+Our semantics is nondeterministic in certain sense, since we don't specify strictly new semantic variable introduction. Therefore the first thing we should prove is that expressions are always equivalent to themselves(that is, reflexivity). We will prove reflexivity of equivalence relation by induction. Having reflexivity proven, transitivity and symmetry will be inferred from reflexivity and transitivity of equality, and thus we will prove, that our equivalence is indeed equivalence relation.
 
-$$ \frac{\semantics{e} \in RelExpr, x \in Var}{\semantics{\keyword{fresh}(x,e)} \in RelExpr}$$
-$$ \semantics{\keyword{fresh}(x,e)}(u, a) = \semantics{e}(ext(u,x), a) $$
+\textbf{Fresh} and \textbf{goal} are the only parts of our semantics, which are nondeterministic, therefore we can prove reflexivity of equivalence relation in our semantics via induction by number of (nested) \textbf{fresh} constructions and induction of number of arguments in \textbf{goal}. Since we do not use any properties of semantic variables except their equality, we can safely change one unique variable to another one, and nothing will change.
 
-$$ \frac{ n \in RelName, x \in Var }{ \semantics{\keyword{call}(n,x)} \in RelExpr } $$
-$$ \semantics{\keyword{call}(n,x)}(u, a) = relate(lookup(a,n), x) $$
+\subsection{Obvious properties}
 
-$$ \frac{ n \in RelName , x \in Var,\semantics{e_1} \in RelExpr, \semantics{e_2} \in RelExpr}{ \semantics{\keyword{letrec} (n, x) \keyword{be} (e_1) \keyword{in} (e_2)} \in RelExpr } $$
-$$ \semantics{\keyword{letrec} (n, x) \keyword{be} (e_1) \keyword{in} (e_2)} (u, a) = \semantics{e_2}(u, extend(a, n, fixpoint(n, x, e_1))) $$
+We should somehow infer the obvious properties from equivalences in propositional logic to use existing theory. 
 
-$$ \frac{ \semantics{e} \in RelExpr }{ \semantics{\keyword{relation} (e)} \in 2^{Rel} } $$
-$$ \semantics{\keyword{relation} (e)} = \semantics{e}(u_\bot, a_\bot) $$
+\subsubsection{Associativity and commutativity of \(\vee\) and \(\wedge\)}
 
-\begin{center}
-% \textbf {Approach 2:}
+Due to associativity and commutativity of \(\cup/\cap\), the proofs are obvious.
 
-\end{center}
+\(\semantics{e_1 \vee e_2 \vee e_3}(\Gamma, X) = \semantics{e_1}(\Gamma, X) \cup \semantics{e_2}(\Gamma, X) \cup \semantics{e_3}(\Gamma, X)\)
+
+\subsubsection{Variable renaming with respect to scopes and shadowing}
+\subsubsection{Pushing fresh up and down with respect to bindings}
+\subsubsection{Interaction of minikanren and propositional calculus}
+
+Intuitively, all the equivalences, which are hold for propositional calculus, should hold for minikanren. Therefore I can propose to modify semantics, so we will be able to use all the equivalences. 
+
+\subsection{Obvious additions to semantics}
+\subsubsection{Not}
+\subsubsection{Disequality constrains}
+\subsubsection{Implication}
+\subsubsection{Equivalence}
 \end{document}
