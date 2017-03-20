@@ -2,102 +2,174 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{stmaryrd}
+\usepackage{systeme}
+
 
 \begin{document}
 \newcommand{\keyword}[1]{\textrm{\textbf{#1}}}
 \newcommand{\semantics}[1]{\llbracket#1\rrbracket}
-\section{Domains}
-\subsection{Internal domains}
-\[\mathbb{X} = \{x,...\} \textrm{ - a countable set of semantic variables }\]
-\[ X \subset \mathbb{X} \textrm{ - a set of semantic variables in use }\]
+\newcommand{\bigsemantics}[1]{\textbf{[[}#1\textbf{]]}}
+
+\section{Syntax}
+
+\subsection{Identifiers, constants and terms}
+
 \[ A = \{a^k, ...\} \textrm{ - a finite set of atoms/constructors}; k \geq 0 \textrm{ stands for arity }\]
-\[ T = x \mid a^k(t_1...t_k), t_i \in T \textrm{ - terms over X and A}\]
 \[ \mathcal{D} = a^k(d_1,..d_k), d_i \in \mathcal{D} \textrm{ - ground terms(values).}\]
-\subsection{Syntax-related domains}
-\[ \mathcal{D}^X = X \rightarrow \mathcal{D} \textrm{ - a set of all total functions from } X \textrm{ to } \mathcal{D}.\]
-\[r \in \mathcal{D}^X\]
-\[ \mathbf{X} = \{ \mathbf{x}, ... \}\textrm{ - set of syntactic variables }\]
-\[ \Gamma \in \mathbf{X} \rightarrow X \textrm{ - environment }\]
+\[ X = \{ x,... \} \textrm{ - a set of syntacic variables } \]
+\[ T_X = x \mid a_k(\mathbf{t}_1, ..., \mathbf{t}_k), \mathbf{t}_i \in T_X \textrm{ - set of terms with syntacic variables } \]
+\[ n \in N \textrm{ - predicate names } \]
 
-Environment is a mapping from syntactic to semantic variables. It is used to separate syntax and semantics to avoid shadowing-related issues.
+\subsection{Program syntax}
 
-\subsection{Expression domains}
+Program is a set of predicate definitions and a goal.
+\[ P = D*; G \]
 
-\[ \semantics{e}(\Gamma, X) \subset \mathcal{D}^X \textrm{ - expression semantics }\]
+Predicate definition consist of predicate name, set of variables and body.
+\[ D = N(X*)\ B \]
 
-Expressions' codomain is unary relation on total function from semantic variables to ground terms. Note that \(X\) in argument and in codomain is the same \(X\), so we can safely reason about extensional equivalence of expressions, given well-defined input(casually, well-defined input is when variables are always introduced correctly).
-% Well-definedness is 
-\subsection{Goal domains}
+Goal definition consist of set of variables and body.
+\[ G = (X*)\ B \]
 
-\[ \semantics{g} \subset \mathcal{D}^\mathbb{X} \textrm{ - top-level goal semantics} \]
+Body can be unification between terms, conjunction, disjunction, predicate application and introduction of a temporary variable in body.
+\[ b \in B, B = \keyword{fresh}(X)\ B  \mid B \vee B \mid B \wedge B \mid T_X \equiv T_X \mid N(X*) \]
 
-Goal represents query in minikanren. We define this query as expression over finite set of variables. The result of goal evaluation is unary relation on total functions from the set of goal variables to the set of ground terms.
+\section{Unification}
 
-% Each function represents a substitution for goal variables, so the formula, corresponding to the goal expression will be truthy. We expect our set of solutions to be correct and complete, but this is to be proved later.
+Unification is a process of making two terms equal via syntactic substitution of variables\cite{baader90}. Syntactically-equal variables can be semantically-different, being introduced in different scopes. To avoid scoping issues, we introduce semantic variables, which will be used for unification, and correspond to syntactic variables in scope. Firstly we will define unification over terms with semantic variables, then show how to define one for syntactic terms.
+
+\subsection{Semantic unification}
+
+\[ \Sigma = \{ \sigma, ... \}\textrm{ - set of semantic variables }\]
+\[ T_\Sigma = \sigma \mid a^k(t_1...t_k), t_i \in T \textrm{ - terms over \( \Sigma \) and A} \]
+\[ \semantics{.}_{sem} \subset \mathcal{D}^\Sigma \]
+
+We define semantics of expressions as the set of functions from variables to ground terms.
+To explain the unification, first we define inductive extension of functions in \(\mathcal{D}^X\) to \(\mathcal{D}^{T_X}\)
+\[ f \in \mathcal{D}^\Sigma, \overline{f} \in \mathcal{D}^{T_\Sigma} - \textrm{ - inductive extension of \( f \) on terms } \]
+\[ \overline{f}(\sigma) = f(\sigma) \]
+\[ \overline{f}(a^k(t_1...t_k)) = a^k(\overline{f}(t_1)...\overline{f}(t_k)) \]
+\[ \semantics{ t_1 \equiv t_2 }_{sem} = \{ f \mid \overline{f}(t_1) = \overline{f}(t_2)  \} \]
+
+\subsection{Syntactic unification}
+\[ \Sigma_{def} \subset \Sigma \textrm{ - a set of defined semantic variables } \]
+\[ \Gamma \in X \rightarrow \Sigma_{def} \textrm{ - mapping between syntactic and semantic variables }\]
+\[ \overline{\Gamma} \in T_X \rightarrow T_{\Sigma} \textrm{ - inductive extension of \( \Gamma \) over terms } \]
+\[ \semantics{.}_{syn}(\Gamma) \in 2^{D^\Sigma} \]
+%%\[ \semantics{.}_{term}(\Gamma) \in T_X \rightarrow T_\Sigma \]
+
+We won't have semantic variables and terms in syntax. To preserve scopes correctly, we need to separate syntactic and semantic variables, and introduce environment with correspondence of syntactic and semantic variables.
+%%\[ \semantics{\mathbf{t}}_{term}(\Gamma) = \overline{\Gamma}(\mathbf{t}) \]
+\[ \semantics{\mathbf{t}_1 \equiv \mathbf{t}_2}_{syn}(\Gamma) = \semantics{ \overline{\Gamma}(\mathbf{t}_1) \equiv \overline{\Gamma}(\mathbf{t}_2) }_{sem} \]
+
 \newpage
+%% what is e?
+\section{Fresh}
+\[ \semantics{\keyword{fresh}(x, b)}_{syn}(\Gamma) = \{ f|_{codom(\Gamma)} \mid f \in \semantics{e}_{syn}(\Gamma, x \rightarrow \sigma), \sigma \notin codom(\Gamma) \}\]
 
-\section{Semantics}
-\subsection{Expressions}
-\subsubsection{Fresh variable introduction}
-\[ \semantics{\keyword{fresh}(\mathbf{x}, e)}(\Gamma, X) = \{ f|_X \mid f \in \semantics{e}(\Gamma,\mathbf{x} \rightarrow x; X \cup \{x\}), x \notin X \}\]
-
-There's certain non-determinism introduced via adding unknown \(x\) to set of semantic variables in use, but for us it's uniqueness property \(x \notin X\) will be enough.
+There's certain non-determinism introduced via adding unknown \(x\) to set of semantic variables in use, but it's uniqueness property \(x \notin X\) is enough to guarantee uniqueness of corresponding variable, introduced in this scope.
 
 We evaluate fresh, introducing new semantic variable for correspodning syntactic variable, then we compute inner expression in extended environment and after that we shrink semantic domain of resulting functions to \(X\). With this approach, we can guarantee for top-level expression, that only free variables will be included in answer, also we guarantee the equality of domains for semantics of subexpressions, nested at the same level, say for \(\semantics{e_1 \wedge e_2}\). 
 
-Also with this property we can safely reason about (extensional) equivalence of expressions, since each expression will evaluate to 
-\subsubsection{Equivalence}
-\[\semantics{t_1 \equiv t_2}(\Gamma, X) = \{ f \mid subst(f, \Gamma, t_1) = subst(f, \Gamma, t_2) \}\]
-\[subst(f, \Gamma, d) = d\]
-\[subst(f, \Gamma, \mathbf{x}) = f(\Gamma(\mathbf{x}))\]
-\[subst(f, \Gamma, t_1) = t_1[\mathbf{x_i} \leftarrow f(\Gamma(\mathbf{x_i}))]\]
-Commentary: I decided to use auxillary function for substitution instead of enumeration of all the cases, since it will be easier to describe all the cases of unification this way. Substitution just replaces all the occurences of syntactic variables in term, according to \(f\) and \(\Gamma\).
+Also with this property we can safely reason about (extensional) equivalence of expressions.
 
-\subsubsection{ Conjunction/disjunction }
-\[\semantics{e_1 \wedge e_2}(\Gamma, X) = \semantics{e_1}(\Gamma, X) \cap \semantics{e_2}(\Gamma, X)\]
-\[\semantics{e_1 \vee e_2}(\Gamma, X) = \semantics{e_1}(\Gamma, X) \cup \semantics{e_2}(\Gamma, X)\]
 
-We can safely use \(\cap\) and \(\cup\) since \(\semantics{e}(\Gamma,X) \in \mathcal{D}^X\) according to (1.3).
+\section{Conjunction/disjunction}
+\[\semantics{e_1 \wedge e_2}_{syn}(\Gamma) = \semantics{e_1}_{syn}(\Gamma) \cap \semantics{e_2}_{syn}(\Gamma)\]
+\[\semantics{e_1 \vee e_2}_{syn}(\Gamma) = \semantics{e_1}_{syn}(\Gamma) \cup \semantics{e_2}_{syn}(\Gamma)\]
 
-\newpage
+We can safely use \(\cap\) and \(\cup\) since \(\semantics{e}(\Gamma) \in \mathcal{D}^\Sigma\).
 
-\subsection{Goals}
-\[ \semantics{\keyword{goal}(x_1,x_2,..x_n)(e)} = \semantics{e}(\Gamma, X) \circ \Gamma \]
-\[X=\{x_1,...x_n\}\]
-\[\Gamma \in \mathcal{D}^X, \Gamma = \{\mathbf{x}_i \rightarrow x_i\}_{i=1}^n\]
-\[\forall i \neq j, x_i \neq x_j \]
+\section{Predicates over terms} 
+\subsection{Rules}
 
-We do not define precisely, which \(x_i\) will correspond to certain \(\mathbf{x}_i\), the only purpose of \(x_i\) is to identify uniqueness of semantic variables and avoid shadowing-related issues via separation of syntactic and semantic variables, as it was mentioned.
-\newpage
-\section{Reasoning about semantic properties.}
-\subsection{Semantic equivalence}
-\[\semantics{e_1} \equiv \semantics{e_2} \iff \forall \Gamma \colon \forall X \colon \semantics{e_1}(\Gamma, X) = \semantics{e_2}(\Gamma, X)\]
+Abstraction rule:
+\[\semantics{\{n_i(x_1, x_2, .. x_{k_i}), ...\ b_i\} }_{def} = \keyword{fix}\ g  \]
+\[ \textrm{where } g_i(t_1,...t_k)(\Gamma) = (\semantics{b_i}_{syn}(\Gamma' ) \cap (\bigcap_{j \in (1:k)} \{ f | \overline{f}(\sigma_j) = \overline{f}(\overline{\Gamma(t_j)}) \} ))|_{codom(\Gamma)} \]
+\[\textrm{where } \Gamma' = \Gamma, x_1 \rightarrow \sigma_1 ..., x_k \rightarrow \sigma_k; \sigma_i \notin codom(\Gamma) \]
 
-Further, by equivalence of expressions, we will assume extensional equivalence of expressions, that is equivalence of expressions' semantics for all possible inputs.
+Fixed point is well-defined, since we operate over functions over sets, that is, due to Tarski-Knaster theorem.
 
-Our semantics is nondeterministic in certain sense, since we don't specify strictly new semantic variable introduction. Therefore the first thing we should prove is that expressions are always equivalent to themselves(that is, reflexivity). We will prove reflexivity of equivalence relation by induction. Having reflexivity proven, transitivity and symmetry will be inferred from reflexivity and transitivity of equality, and thus we will prove, that our equivalence is indeed equivalence relation.
+Application rule.
+\[ \semantics{n_i(t_1, t_2 ... t_k)}_{syn}(\Gamma) = g_i(t_1, ... , t_k)(\Gamma) \]
 
-\textbf{Fresh} and \textbf{goal} are the only parts of our semantics, which are nondeterministic, therefore we can prove reflexivity of equivalence relation in our semantics via induction by number of (nested) \textbf{fresh} constructions and induction of number of arguments in \textbf{goal}. Since we do not use any properties of semantic variables except their equality, we can safely change one unique variable to another one, and nothing will change.
+\subsection{Relation semantics sanity proof}
+\[ \semantics{ \keyword{fresh}(x_1, x_2 ... x_k)\ (e \wedge \bigwedge_{i \in [1 .. k]} (x_i \equiv t_i)) }_{syn}(\Gamma, \Omega) = \semantics{\keyword{let}\ p(x_1, ... ,x_k)\ e\ \keyword{in}\ p(t_1, ..., t_k)  } \]
+(given that \( x_i \) do not occur in \( e \) and \( t_i \))
 
-\subsection{Obvious properties}
+Proof:
+\[ \semantics{ \keyword{fresh}(x_1, x_2 ... x_k)\ (e \wedge \bigwedge_{i \in [1 .. k]} (x_i \equiv t_i)) }_{syn}(\Gamma, \Omega) = \]
+\[ \semantics{ e \wedge \bigwedge_{i \in [1 .. k]} (x_i \equiv t_i) }_{syn}(\Gamma')|_{codom(\Gamma)} \]
+\[\textrm{where } \Gamma' = \Gamma, x_1 \rightarrow \sigma_1 ..., x_k \rightarrow \sigma_n, \sigma_i \notin codom(\Gamma) \]
 
-We should somehow infer the obvious properties from equivalences in propositional logic to use existing theory. 
+\[ = (\semantics{e}_{syn}(\Gamma') \cap \bigcap \{ f \mid \overline{f}(\sigma_i) = \overline{f}(\overline{\Gamma}(t_i)) \})|_{codom(\Gamma)} \]
+\[ \semantics{e}_{syn}(\Gamma') = \semantics{e}_{syn}(\Gamma) \textrm{ since \(x_i\) is not in \(e\) } \]
+We can abstract out expression as relation application for relation \(p\), stored in \( \Omega \) and we'll have semantics of predicate exactly.
+\subsection{Recursion}
+We can define recursive relations via function from relation to relation. Function will be monothone (in set-lattice sense), since we only use union, intersection, projection and this three operations are monothone, their composition is monothone. 
+Via Tarski-Knaster theorem, we can conclude existence of fixed point of function through its monotonicity. 
+In the end it looks like this:
+\[ goal \subset D^{codom(\Gamma)} \]
+\[\semantics{\keyword{letrec}\ p(x_1, x_2, .. x_k)\ e_1\ \keyword{in}\ e_2}_{syn}(\Gamma) = \keyword{fix}(g)(\varnothing) \]
+\[ \textrm{where } g(goal) = \semantics{\keyword{let}\ p(x_1, x_2, .. x_k)\ e_1\ \keyword{in}\ e_2}_{syn}(\Gamma, p \rightarrow goal) \]
+%Dunno, how to connect it to environment and recursive calls properly, though.
 
-\subsubsection{Associativity and commutativity of \(\vee\) and \(\wedge\)}
+%\subsection{Eigen}
+%To define eigen-like-in-minikanren, we should modify semantics in 
 
-Due to associativity and commutativity of \(\cup/\cap\), the proofs are obvious.
 
-\(\semantics{e_1 \vee e_2 \vee e_3}(\Gamma, X) = \semantics{e_1}(\Gamma, X) \cup \semantics{e_2}(\Gamma, X) \cup \semantics{e_3}(\Gamma, X)\)
+\section{Unification Properties}
+\subsection{Most General Unifier}
 
-\subsubsection{Variable renaming with respect to scopes and shadowing}
-\subsubsection{Pushing fresh up and down with respect to bindings}
-\subsubsection{Interaction of minikanren and propositional calculus}
+\[ \semantics{t_1 \equiv t_2}_{sem} \neq \varnothing \Longleftrightarrow \exists \  mgu(t_1, t_2)  \]
 
-Intuitively, all the equivalences, which are hold for propositional calculus, should hold for minikanren. Therefore I can propose to modify semantics, so we will be able to use all the equivalences. 
+Direct implication:
 
-\subsection{Obvious additions to semantics}
-\subsubsection{Not}
-\subsubsection{Disequality constrains}
-\subsubsection{Implication}
-\subsubsection{Equivalence}
+Funcions in \( \semantics{t_1 \equiv t_2}_{sem} \) are unifiers by definition, therefore exist at least one unifier for terms, therefore \( mgu \) exists.
+
+Backward implication:
+\[\overline{mgu}(t_1, t_2)(t_1) = \overline{mgu}(t_1, t_2)(t_2) \Rightarrow \forall f \in D^\Sigma: \overline{f} \circ \overline{mgu}(t_1, t_2) \in \semantics{t_1 \equiv t_2}_{sem} \]
+
+
+Stronger proposition:
+\[ \semantics{ t_1 \equiv t_2 }_{sem} = \{ f \circ mgu(t_1, t_2) \mid f \in D^{\Sigma} \} \]
+
+\( \subset \):
+\[ \forall f \in \semantics{ t_1 \equiv t_2 }_{sem}\ :\ f = f' \circ mgu(t_1, t_2),\ f' \in T^\Sigma\]
+
+
+\( f' \) will operate on terms with variables and produce terms with variables, but since end result will be a term without variables, \(f'\) eliminated all the variables, therefore was constant on the free variables of term under mgu. We can take any other function in \(D^\Sigma\), which is equal to \(f'\) on these free variables.
+
+
+
+\( \supset \):
+
+
+Since \( \forall f \in D^{\Sigma} f \circ mgu(t_1, t_2) \) is the same on \(t_1\) and \(t_2\), by definition of unification semantics, \( f \circ mgu(t_1, t_2) \in \semantics{ t_1 \equiv t_2 }_{sem}\).
+
+\subsection{Subterms}
+\subsubsection{ Unification of subterms is superset of unification of terms }
+
+
+Proof by induction.
+
+Induction base.
+\[ f \in \semantics{ a_k(t_1, .. t_k) \equiv a_k(t_1',.., t_k') }_{sem} \]
+\[ \Rightarrow_{def} \overline{f}(a_k(t_1, .. t_k)) = \overline{f}(a_k(t_1', .. t_k'))\]
+\[ \Rightarrow a_k(\overline{f}(t_1), ... \overline{f}(t_k)) = a_k(\overline{f}(t_1'), ... \overline{f}(t_k')) \]
+\[ \Rightarrow \forall i \in (1:k),\  \overline{f}(t_i) = \overline{f}(t_i') \]
+\[ \Rightarrow f \in \semantics{ t_i \equiv t_i' }_{sem} \]
+
+Induction step.
+
+Statement is correct for terms, nested at level n, we should prove correctness for terms, nested at level n+1. We can apply induction base to parent of term at level n.
+
+\subsubsection{ Unification functions over terms unify subterms }
+
+Correct by previous statement.
+
+\subsubsection{Correspondence between MGU and }
+
+\subsection{ Properties  }
+
 \end{document}
