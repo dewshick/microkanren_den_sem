@@ -1,0 +1,101 @@
+\documentclass{article}
+\usepackage{amsmath, listings, amsthm, amssymb, proof, xspace}
+\begin{document}
+
+\section{Simple big step operational semantics}
+
+We introduce nondeterministic big-step operational semantics for minikanren(without recursion and predicates, which will be added in next section, and disequality, which won't be here for a while).
+
+$ x $ is a variable
+
+$ d $ is a ground term, that is $ c_k(d_1, ... d_k) $ where $ c_k $ is k-ary constructor
+
+$ t $ is a term, which can be variable or $ c_k(t_1, ... t_k) $
+
+$ g $ - goal, can be $ t_1 \equiv t_2 $ or $ g \vee g $ or $ g \wedge g $ or $ p(t_1 ... t_n) $
+
+$ p $ -predicate symbol with $ \{x^p_i\}_{i\in (1:n)} $ variables and $ g_p $ body
+
+$ s $ - substitution, from $ x $ to $ d $. Substitutions can be computed as most general unifiers of terms. Substitutions can be composed, resulting in most general substitution, which unifies terms unified by operands of composition.
+
+Initial state $ s $ is empty substitution(identity) and initial goal statement $g$. Through the nondeterministic reduction steps we accumulate final substitution in state till we reach final substitution-answer.
+
+\ 
+
+\infer[\textsc{UNIFY}]{<t_1 \equiv t_2, s> \longrightarrow s \circ mgu(t_1, t_2)}{}
+
+\ 
+
+
+\infer[\textsc{DISJ-LEFT}]{<g_1 \vee g_2, s> \longrightarrow s'}{ <g_1, s> \longrightarrow s' }
+
+\ 
+
+\infer[\textsc{DISJ-RIGHT}]{<g_1 \vee g_2, s> \longrightarrow s'}{ <g_2, s> \longrightarrow s' }
+
+\ 
+
+\infer[\textsc{CONJ}]{ <g_1 \wedge g_2, s> \longrightarrow s_1 \circ s_2 }{ <g_1, s> \longrightarrow s_1 \qquad <g_2, s> \longrightarrow s_2 }
+
+\newpage
+
+\section{Fresh, predicates and semantic variables }
+
+We introduce semantic environment $ \Gamma $ as mapping between syntacic($x$) and semantic($\sigma$) variables to avoid scoping issues. Semantic variables are expected to be elements of arbitrary countable set, they are used only to capture identity of variables. When $ \Gamma $ is applied to terms, we assume all the syntactic variables in terms are substituted to semantic variables.
+
+Substitutions $ s $ now work on semantic domain instead of syntactic one. When substitution $ s $ is used in wider domain it is defined on, we assume it works as identity on variables, on which it is not defined.
+
+\ 
+
+\infer[\textsc{UNIFY-SEM}]{\Gamma \vdash <t_1 \equiv t_2,s> \longrightarrow s \circ mgu(\Gamma(t_1), \Gamma(t_2)) }{}
+
+\ 
+
+\infer[\textsc{FRESH}]{\Gamma \vdash <fresh(x)\ g, s> \longrightarrow s'|_{dom(s')/\sigma}  }{ \Gamma[x \rightarrow \sigma] \vdash <g, s> \longrightarrow s' }
+
+\ 
+
+\ 
+
+Let $ \Gamma_{ext} = \Gamma[x^p_i \rightarrow \sigma_i]_{i \in (1:n)}, \sigma_i \notin dom(\Gamma) $
+
+\ 
+
+\infer[\textsc{PREDICATE}]{\Gamma \vdash <p(t_1,t_2 ... t_n), s> \longrightarrow (s' \circ (\bigcirc_{i \in (1:n)}\  mgu(\Gamma_{ext}(t_i), \Gamma_{ext}(x^p_i))))|_{dom(\Gamma)} }{ \Gamma_{ext} \vdash <g_p, s> \longrightarrow s' }
+
+
+\section{Analogue of simple big step semantics, but for small-step}
+
+We need to introduce success goal, to get rid of big-step-like reductions.
+
+$ g $ - goal, can be $ t_1 \equiv t_2 $ or $ g \vee g $ or $ g \wedge g $ or $ p(t_1 ... t_n) $ or $ success $
+
+\ 
+
+\infer[\textsc{SUCCESS}]{<success, s> \longrightarrow s }{}
+
+\ 
+
+\infer[\textsc{UNIFY}]{<t_1 \equiv t_2, s> \longrightarrow < success, s \circ mgu(t_1, t_2) >}{}
+
+\ 
+
+
+\infer[\textsc{DISJ-LEFT}]{<g_1 \vee g_2, s> \longrightarrow <g_1, s>}{}
+
+\ 
+
+\infer[\textsc{DISJ-RIGHT}]{<g_1 \vee g_2, s> \longrightarrow <g_2, s>}{}
+
+\ 
+
+\infer[\textsc{CONJ}]{ <g_1 \wedge g_2, s> \longrightarrow < g_1'\wedge g_2', s_1 \circ s_2> }{ <g_1, s> \longrightarrow <g_1',s_1> \qquad <g_2, s> \longrightarrow <g_2',s_2> }
+
+\ 
+
+\infer[\textsc{CONJ-SUCCESS-LEFT}]{ <success \wedge g, s> \longrightarrow < g, s> }{}
+
+\ 
+
+\infer[\textsc{CONJ-SUCCESS-RIGHT}]{ < g \wedge success, s> \longrightarrow < g, s> }{}
+\end{document}
