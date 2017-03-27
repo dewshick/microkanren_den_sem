@@ -8,15 +8,13 @@ We introduce nondeterministic big-step operational semantics for minikanren(with
 
 $ x $ is a variable
 
-$ d $ is a ground term, that is $ c_k(d_1, ... d_k) $ where $ c_k $ is k-ary constructor
-
-$ t $ is a term, which can be variable or $ c_k(t_1, ... t_k) $
+$ t $ is a term, which can be variable or $ c_k(t_1, ... t_k) $  where $ c_k $ is k-ary constructor
 
 $ g $ - goal, can be $ t_1 \equiv t_2 $ or $ g \vee g $ or $ g \wedge g $ or $ p(t_1 ... t_n) $
 
 $ p $ -predicate symbol with $ \{x^p_i\}_{i\in (1:n)} $ variables and $ g_p $ body
 
-$ s $ - substitution, from $ x $ to $ d $. Substitutions can be computed as most general unifiers of terms. Substitutions can be composed, resulting in most general substitution, which unifies terms unified by operands of composition.
+$ s $ - substitution, from $ x $ to $ t $. Substitutions can be computed as most general unifiers of terms. Substitutions can be composed, resulting in most general substitution, which unifies terms unified by operands of composition.
 
 Initial state $ s $ is empty substitution(identity) and initial goal statement $g$. Through the nondeterministic reduction steps we accumulate final substitution in state till we reach final substitution-answer.
 
